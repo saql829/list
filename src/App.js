@@ -1,12 +1,11 @@
 import { useState } from 'react';
 
-
-
 function App() {
   const [name, setName] = useState('');
   const [rate, setRate] = useState(0.1);
   const [qty, setQty] = useState(0.1);
   const [vegetables, setVegetables] = useState([]);
+  const [currentEditId, setCurrentEditId] = useState(null);
 
   function handleName(event) {
     setName(event.target.value);
@@ -20,14 +19,37 @@ function App() {
     setQty(event.target.value);
   }
 
-  function handleAddItem() {
-    setVegetables((prev) => [
-      ...prev,
-      { id: prev.length + 1, name: name, rate: parseFloat(rate), qty: parseFloat(qty) },
-    ]);
+  function handleAddOrUpdateItem() {
+    if (currentEditId !== null) {
+      // Update existing item
+      setVegetables((prev) =>
+        prev.map((item) =>
+          item.id === currentEditId
+            ? { ...item, name, rate: parseFloat(rate), qty: parseFloat(qty) }
+            : item
+        )
+      );
+      setCurrentEditId(null);
+    } else {
+      // Add new item
+      setVegetables((prev) => [
+        ...prev,
+        { id: prev.length + 1, name, rate: parseFloat(rate), qty: parseFloat(qty) },
+      ]);
+    }
     setName('');
     setRate(0.1);
     setQty(0.1);
+  }
+
+  function handleEditItem(id) {
+    const item = vegetables.find((item) => item.id === id);
+    if (item) {
+      setName(item.name);
+      setRate(item.rate);
+      setQty(item.qty);
+      setCurrentEditId(id);
+    }
   }
 
   function handleDeleteItem(id) {
@@ -66,8 +88,11 @@ function App() {
           onChange={handleQty}
         />
       </div>
-      <button className='btn btn-primary' onClick={handleAddItem}>
-        Add Item
+      <button
+        className={`btn ${currentEditId !== null ? 'btn-warning' : 'btn-primary'}`}
+        onClick={handleAddOrUpdateItem}
+      >
+        {currentEditId !== null ? 'Update Item' : 'Add Item'}
       </button>
 
       <h2 className='my-4'>Items</h2>
@@ -79,7 +104,7 @@ function App() {
             <th>Rate</th>
             <th>Quantity</th>
             <th>Total</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -91,6 +116,12 @@ function App() {
               <td>{item.qty}</td>
               <td>{(item.rate * item.qty).toFixed(2)}</td>
               <td>
+                <button
+                  className='btn btn-success btn-sm me-2'
+                  onClick={() => handleEditItem(item.id)}
+                >
+                  Edit
+                </button>
                 <button
                   className='btn btn-danger btn-sm'
                   onClick={() => handleDeleteItem(item.id)}
